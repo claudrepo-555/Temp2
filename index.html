@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chronicles of Fate — AI D&D</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- API KEY SETUP SCREEN -->
+  <div id="setup-screen" class="screen active">
+    <div class="setup-container">
+      <div class="skull-icon">☠</div>
+      <h1 class="game-title">Chronicles of Fate</h1>
+      <p class="game-subtitle">An AI-Powered D&amp;D Experience</p>
+      <div class="warning-box">
+        <span class="warning-icon">⚠</span>
+        <p><strong>MATURE CONTENT WARNING</strong><br/>This game contains violence, dark themes, and mature content. All ability checks are brutally difficult (+10 DC). <strong>Your character can and will die.</strong></p>
+      </div>
+      <div class="setup-form">
+        <label for="api-key-input">Anthropic API Key</label>
+        <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" />
+        <p class="key-hint">Your key is stored only in memory and never sent anywhere except the Anthropic API.</p>
+        <button id="begin-btn" class="btn-primary">Enter the Realm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GAME SCREEN -->
+  <div id="game-screen" class="screen">
+
+    <!-- Header -->
+    <header class="game-header">
+      <h1 class="header-title">Chronicles of Fate</h1>
+      <div class="header-right">
+        <span id="campaign-label" class="campaign-name"></span>
+        <button id="restart-btn" class="btn-ghost" title="Restart Game">⟳ Restart</button>
+      </div>
+    </header>
+
+    <div class="game-layout">
+
+      <!-- LEFT: Character Panel -->
+      <aside class="char-panel" id="char-panel">
+        <div class="panel-section">
+          <h2 class="panel-title">Character</h2>
+          <div id="char-portrait" class="char-portrait">
+            <div class="portrait-placeholder">?</div>
+          </div>
+          <div class="char-name-block">
+            <div id="char-name" class="char-name">—</div>
+            <div id="char-subtitle" class="char-subtitle">—</div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h3 class="panel-label">Health</h3>
+          <div class="hp-bar-wrap">
+            <div class="hp-bar" id="hp-bar"></div>
+          </div>
+          <div class="hp-text"><span id="hp-current">—</span> / <span id="hp-max">—</span> HP</div>
+        </div>
+
+        <div class="panel-section" id="stats-section" style="display:none">
+          <h3 class="panel-label">Ability Scores</h3>
+          <div class="stats-grid">
+            <div class="stat-box"><div class="stat-val" id="stat-str">—</div><div class="stat-lbl">STR</div></div>
+            <div class="stat-box"><div class="stat-val" id="stat-dex">—</div><div class="stat-lbl">DEX</div></div>
+            <div class="stat-box"><div class="stat-val" id="stat-con">—</div><div class="stat-lbl">CON</div></div>
+            <div class="stat-box"><div class="stat-val" id="stat-int">—</div><div class="stat-lbl">INT</div></div>
+            <div class="stat-box"><div class="stat-val" id="stat-wis">—</div><div class="stat-lbl">WIS</div></div>
+            <div class="stat-box"><div class="stat-val" id="stat-cha">—</div><div class="stat-lbl">CHA</div></div>
+          </div>
+        </div>
+
+        <div class="panel-section" id="death-counter-section" style="display:none">
+          <h3 class="panel-label">Deaths</h3>
+          <div class="death-count" id="death-count">0</div>
+        </div>
+      </aside>
+
+      <!-- CENTER: Story Area -->
+      <main class="story-area">
+        <div class="scene-image-wrap" id="scene-image-wrap" style="display:none">
+          <img id="scene-image" src="" alt="Scene" class="scene-image" />
+          <div class="scene-image-overlay"></div>
+        </div>
+
+        <div class="story-log" id="story-log">
+          <!-- Messages rendered here -->
+        </div>
+
+        <!-- Dice Roll Overlay -->
+        <div class="dice-overlay" id="dice-overlay" style="display:none">
+          <div class="dice-container">
+            <div class="dice-title" id="dice-title">Strength Check</div>
+            <div class="dice-subtitle" id="dice-dc">DC 25</div>
+            <div class="dice" id="dice-face">d20</div>
+            <div class="dice-result" id="dice-result"></div>
+            <button class="btn-primary dice-roll-btn" id="dice-roll-btn">Roll the Dice!</button>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area" id="input-area">
+          <div class="input-wrap">
+            <textarea id="player-input" placeholder="What do you do?" rows="2" maxlength="500"></textarea>
+            <button id="send-btn" class="btn-send">
+              <span id="send-icon">➤</span>
+              <span id="send-spinner" class="spinner" style="display:none"></span>
+            </button>
+          </div>
+          <div class="input-hint" id="input-hint">Describe your action in detail. The DM is watching.</div>
+        </div>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- DEATH SCREEN -->
+  <div id="death-screen" class="screen death-overlay">
+    <div class="death-content">
+      <div class="death-skull">💀</div>
+      <h2 class="death-title" id="death-title">YOU HAVE DIED</h2>
+      <p class="death-message" id="death-message"></p>
+      <div class="death-spinner">
+        <span class="spinner"></span>
+        <span>The Dungeon Master prepares your fate...</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="dm.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
