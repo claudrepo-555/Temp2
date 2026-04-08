@@ -711,6 +711,107 @@ html, body {
 }
 
 /* ============================================
+   BEHAVIOUR PICKER
+   ============================================ */
+.behaviour-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.behaviour-label {
+  font-family: var(--font-title);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding-top: 0.35rem;
+  flex-shrink: 0;
+}
+
+.behaviour-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  background: var(--bg-darkest);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  color: var(--text-secondary);
+  padding: 0.25rem 0.65rem;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.chip:hover {
+  border-color: var(--purple);
+  color: var(--text-primary);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.chip.active {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: var(--purple);
+  color: #c4b5fd;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+}
+
+/* Per-chip accent colours */
+.chip[data-behaviour="Aggressive"].active,
+.chip[data-behaviour="Hostile"].active {
+  background: rgba(192, 57, 43, 0.15);
+  border-color: var(--red);
+  color: #fca5a5;
+  box-shadow: 0 0 8px rgba(192, 57, 43, 0.3);
+}
+
+.chip[data-behaviour="Flirtatious"].active {
+  background: rgba(236, 72, 153, 0.15);
+  border-color: #ec4899;
+  color: #f9a8d4;
+  box-shadow: 0 0 8px rgba(236, 72, 153, 0.3);
+}
+
+.chip[data-behaviour="Friendly"].active,
+.chip[data-behaviour="Diplomatic"].active {
+  background: rgba(39, 174, 96, 0.12);
+  border-color: var(--green);
+  color: #86efac;
+  box-shadow: 0 0 8px rgba(39, 174, 96, 0.25);
+}
+
+.chip[data-behaviour="Dominant"].active {
+  background: rgba(201, 168, 76, 0.12);
+  border-color: var(--gold);
+  color: var(--gold-light);
+  box-shadow: 0 0 8px rgba(201, 168, 76, 0.3);
+}
+
+.chip[data-behaviour="Deceptive"].active {
+  background: rgba(107, 63, 160, 0.2);
+  border-color: var(--border-glow);
+  color: #d8b4fe;
+}
+
+.behaviour-hint {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: 0.4rem;
+  padding-left: 0.3rem;
+  border-left: 2px solid var(--border-color);
+  padding-left: 0.6rem;
+  animation: fadeInUp 0.2s ease;
+}
+
+/* ============================================
    INPUT AREA
    ============================================ */
 .input-area {

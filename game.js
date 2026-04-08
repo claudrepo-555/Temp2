@@ -15,7 +15,8 @@ const state = {
   conversationHistory: [],
   deathCount: 0,
   pendingRoll: null,     // { ability, skill, dc, modifier, reason }
-  isLoading: false
+  isLoading: false,
+  selectedBehaviour: null  // one of the 11 behaviour keys, or null
 };
 
 // ── DOM References ──────────────────────────────────────────────
@@ -36,6 +37,8 @@ const el = {
   sendIcon:      document.getElementById('send-icon'),
   sendSpinner:   document.getElementById('send-spinner'),
   inputHint:     document.getElementById('input-hint'),
+  behaviourChips: document.getElementById('behaviour-chips'),
+  behaviourHint:  document.getElementById('behaviour-hint'),
 
   sceneImageWrap: document.getElementById('scene-image-wrap'),
   sceneImage:     document.getElementById('scene-image'),
@@ -506,12 +509,29 @@ function generateFallbackCharacter(gender) {
 async function handlePlayerInput() {
   if (state.isLoading) return;
   const text = el.playerInput.value.trim();
-  if (!text) return;
+  if (!text && !state.selectedBehaviour) return;
+
+  // Build display text and DM content
+  const behaviour = state.selectedBehaviour;
+  const displayText = text || `[Acts ${behaviour}]`;
+
+  let dmContent = text;
+  if (behaviour) {
+    const desc = BEHAVIOUR_DESCS[behaviour] || '';
+    if (text) {
+      dmContent = `[BEHAVIOUR: ${behaviour} — ${desc}]\n${text}`;
+    } else {
+      dmContent = `[BEHAVIOUR: ${behaviour} — ${desc}]\nMy character responds/acts in a ${behaviour.toLowerCase()} manner appropriate to the current situation.`;
+    }
+  }
 
   el.playerInput.value = '';
-  appendMessage('player', text);
+  appendMessage('player', displayText + (behaviour && text ? ` *(${behaviour})*` : behaviour ? ` *(${behaviour})*` : ''));
 
-  state.conversationHistory.push({ role: 'user', content: text });
+  // Clear behaviour selection after sending
+  clearBehaviour();
+
+  state.conversationHistory.push({ role: 'user', content: dmContent });
   await fetchDMResponse();
 }
 
@@ -546,9 +566,17 @@ async function startGame() {
   await fetchDMResponse();
 }
 
+function clearBehaviour() {
+  state.selectedBehaviour = null;
+  document.querySelectorAll('.chip.active').forEach(c => c.classList.remove('active'));
+  el.behaviourHint.style.display = 'none';
+  el.behaviourHint.textContent = '';
+}
+
 function restartGame() {
   state.apiKey = state.apiKey; // keep key
   state.phase = 'setup';
+  clearBehaviour();
   state.conversationHistory = [];
   state.character = null;
   state.deathCount = 0;
@@ -570,6 +598,22 @@ function restartGame() {
 
   showScreen('setup');
 }
+
+// ── Behaviour Definitions ────────────────────────────────────────
+
+const BEHAVIOUR_DESCS = {
+  Passive:     'Avoids conflict, speaks softly, hesitates, defers decisions. Short hesitant replies, lots of "maybe" and qualifiers.',
+  Aggressive:  'Confrontational, quick to threaten or escalate, forceful and blunt. Short sharp sentences, demands, physical posturing.',
+  Submissive:  'Meek, obedient, self-effacing, easily yields or apologises. "Yes sir", "as you wish", nervous laughter, lowered gaze.',
+  Dominant:    'Authoritative, controlling, expects obedience, commands the conversation. Imperative language, direct orders, interruptions.',
+  Diplomatic:  'Tactful, seeks compromise, polite negotiation, keeps options open. Measured speech, flattery mixed with reason.',
+  Friendly:    'Warm, helpful, open, quick to trust and build rapport. Nicknames, offers of aid, enthusiastic agreement.',
+  Hostile:     'Openly unfriendly, suspicious, rude or insulting without immediate violence. Sneers, curt dismissals, veiled threats.',
+  Deceptive:   'Sly, evasive, lies or withholds information, hidden agenda. Half-truths, deflections, charming smiles hiding intent.',
+  Flirtatious: 'Playful, seductive and complimentary. Flowing speech, compliments, theatrical gestures, magnetic presence.',
+  Indifferent: 'Apathetic, bored, minimal effort responses. Shrugs, monosyllabic answers, obvious disengagement.',
+  Sarcastic:   'Witty, mocking, ironic, biting and world-weary. Exaggerated sighs, eye-rolls, dry humour that undercuts others.'
+};
 
 // ── Event Listeners ──────────────────────────────────────────────
 
@@ -593,4 +637,25 @@ el.diceRollBtn.addEventListener('click', performRoll);
 
 el.restartBtn.addEventListener('click', () => {
   if (confirm('Abandon this run and start over?')) restartGame();
+});
+
+// ── Behaviour Chip Wiring ────────────────────────────────────────
+
+el.behaviourChips.addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+
+  const behaviour = chip.dataset.behaviour;
+
+  if (state.selectedBehaviour === behaviour) {
+    // Deselect
+    clearBehaviour();
+  } else {
+    // Select new
+    document.querySelectorAll('.chip.active').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    state.selectedBehaviour = behaviour;
+    el.behaviourHint.textContent = BEHAVIOUR_DESCS[behaviour];
+    el.behaviourHint.style.display = 'block';
+  }
 });

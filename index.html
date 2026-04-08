@@ -105,14 +105,34 @@
 
         <!-- Input Area -->
         <div class="input-area" id="input-area">
+
+          <!-- Behaviour Picker -->
+          <div class="behaviour-row">
+            <span class="behaviour-label">Tone:</span>
+            <div class="behaviour-chips" id="behaviour-chips">
+              <button class="chip" data-behaviour="Passive"     data-desc="Avoids conflict, hesitant, defers">😶 Passive</button>
+              <button class="chip" data-behaviour="Aggressive"  data-desc="Confrontational, forceful, blunt">😠 Aggressive</button>
+              <button class="chip" data-behaviour="Submissive"  data-desc="Meek, obedient, self-effacing">🙇 Submissive</button>
+              <button class="chip" data-behaviour="Dominant"    data-desc="Authoritative, commanding, controlling">👑 Dominant</button>
+              <button class="chip" data-behaviour="Diplomatic"  data-desc="Tactful, balanced, seeks compromise">🤝 Diplomatic</button>
+              <button class="chip" data-behaviour="Friendly"    data-desc="Warm, open, quick to build rapport">😊 Friendly</button>
+              <button class="chip" data-behaviour="Hostile"     data-desc="Unfriendly, suspicious, curt">🗡 Hostile</button>
+              <button class="chip" data-behaviour="Deceptive"   data-desc="Sly, evasive, hidden agenda">🎭 Deceptive</button>
+              <button class="chip" data-behaviour="Flirtatious" data-desc="Playful, seductive, complimentary">💋 Flirtatious</button>
+              <button class="chip" data-behaviour="Indifferent" data-desc="Apathetic, bored, minimal effort">😑 Indifferent</button>
+              <button class="chip" data-behaviour="Sarcastic"   data-desc="Witty, mocking, dry and world-weary">🙄 Sarcastic</button>
+            </div>
+          </div>
+          <div class="behaviour-hint" id="behaviour-hint" style="display:none"></div>
+
           <div class="input-wrap">
-            <textarea id="player-input" placeholder="What do you do?" rows="2" maxlength="500"></textarea>
+            <textarea id="player-input" placeholder="What do you do? (optional — a tone alone is enough)" rows="2" maxlength="500"></textarea>
             <button id="send-btn" class="btn-send">
               <span id="send-icon">➤</span>
               <span id="send-spinner" class="spinner" style="display:none"></span>
             </button>
           </div>
-          <div class="input-hint" id="input-hint">Describe your action in detail. The DM is watching.</div>
+          <div class="input-hint" id="input-hint">Pick a tone, type an action, or both. The DM is watching.</div>
         </div>
       </main>
 
