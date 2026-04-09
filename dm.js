@@ -1,6 +1,6 @@
 /* ============================================
-   DM.JS — Claude AI Dungeon Master
-   Handles all API communication with Claude
+   DM.JS — Grok AI Dungeon Master
+   Handles all API communication with Grok (xAI)
    ============================================ */
 
 const DM = (() => {
@@ -64,6 +64,30 @@ RESPONSE FORMAT: Valid JSON only.
   "campaign_short": "Short 2-3 word name for UI",
   "scene_image_prompt": "Vivid visual description for the opening scene image"
 }`;
+
+  const SYSTEM_PROMPT_SUMMARIZE = `You are a precise chronicle-keeper for a D&D 5e campaign called "Chronicles of Fate."
+You will be given the full conversation history between a player and a Dungeon Master.
+Your job is to produce a concise but complete bullet-point summary of everything that has happened.
+
+REQUIRED — include ALL of the following, omitting nothing in these categories:
+- Key NPCs encountered (name, disposition, role, last known location/status)
+- Locations visited or mentioned (name, brief description, why it matters)
+- Items acquired, lost, sold, or otherwise significant (name, who holds it, any properties)
+- Active quests and unresolved plot hooks
+- Active mysteries and unanswered questions
+- Significant player choices and their consequences
+- Every character death (who died, how, who replaced them)
+- Current situation: exactly where the character is right now and what is happening at this moment
+- Active threats: enemies, curses, traps, time pressures, ongoing dangers
+- Alliances formed and enemies made
+
+FORMAT RULES:
+- Return ONLY a plain bullet-point list. One bullet per fact.
+- No JSON. No headers. No preamble. No "Here is the summary:" opener.
+- Each bullet starts with a hyphen-space (- ).
+- Be factual and concise — one sentence per bullet.
+- Aim for 15-30 bullets. Cover everything important; do not pad.
+- Use present tense for ongoing situations, past tense for completed events.`;
 
   const buildGameSystemPrompt = (character, campaign, deathCount) => `You are the Dungeon Master for "Chronicles of Fate," running ${campaign} — a brutally difficult D&D 5e campaign. You are darkly humorous, ruthless, and masterful at storytelling.
 
@@ -143,22 +167,22 @@ WHEN CHARACTER DIES — set character_died to true and death_cause to a vivid de
   "personality": "brief note"
 }`;
 
-  // ── API Call ───────────────────────────────────────────────────
+  // ── API Calls ──────────────────────────────────────────────────
 
-  async function callClaude(apiKey, messages, systemPrompt) {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+  async function callGrok(apiKey, messages, systemPrompt) {
+    const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-calls': 'true'
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'grok-3',
         max_tokens: 2048,
-        system: systemPrompt,
-        messages: messages
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages
+        ]
       })
     });
 
@@ -168,7 +192,7 @@ WHEN CHARACTER DIES — set character_died to true and death_cause to a vivid de
     }
 
     const data = await response.json();
-    const raw = data.content[0].text.trim();
+    const raw = data.choices[0].message.content.trim();
 
     // Extract JSON — handle markdown code fences if present
     const jsonMatch = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || raw.match(/(\{[\s\S]*\})/);
@@ -186,16 +210,43 @@ WHEN CHARACTER DIES — set character_died to true and death_cause to a vivid de
 
   return {
     startCharacterCreation(apiKey, history) {
-      return callClaude(apiKey, history, SYSTEM_PROMPT_CHARACTER_CREATION);
+      return callGrok(apiKey, history, SYSTEM_PROMPT_CHARACTER_CREATION);
     },
 
     selectCampaign(apiKey, history, character) {
       const prompt = `${SYSTEM_PROMPT_CAMPAIGN_SELECT}\n\nCHARACTER CREATED:\n${JSON.stringify(character, null, 2)}`;
-      return callClaude(apiKey, history, prompt);
+      return callGrok(apiKey, history, prompt);
     },
 
     sendAction(apiKey, history, character, campaign, deathCount) {
-      return callClaude(apiKey, history, buildGameSystemPrompt(character, campaign, deathCount));
+      return callGrok(apiKey, history, buildGameSystemPrompt(character, campaign, deathCount));
+    },
+
+    async summarize(apiKey, history) {
+      // Separate one-shot call — returns plain text, not JSON
+      const response = await fetch('https://api.x.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'grok-3',
+          max_tokens: 1500,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT_SUMMARIZE },
+            ...history
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `Summarization API error ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content.trim();
     }
   };
 

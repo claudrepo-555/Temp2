@@ -588,6 +588,46 @@ html, body {
   margin-top: 0.2rem;
 }
 
+/* ============================================
+   CONTEXT SUMMARY MESSAGE
+   ============================================ */
+.msg-summary {
+  background: rgba(201, 168, 76, 0.06);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  padding: 1rem 1.2rem;
+}
+
+.msg-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+}
+
+.msg-summary-icon {
+  font-size: 1rem;
+}
+
+.msg-summary-label {
+  font-family: var(--font-title);
+  font-size: 0.8rem;
+  color: var(--gold);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.msg-summary .msg-text {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  font-style: italic;
+  white-space: pre-wrap;
+}
+
 /* Typing indicator */
 .typing-indicator {
   display: flex;

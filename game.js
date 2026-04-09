@@ -16,7 +16,9 @@ const state = {
   deathCount: 0,
   pendingRoll: null,     // { ability, skill, dc, modifier, reason }
   isLoading: false,
-  selectedBehaviour: null  // one of the 11 behaviour keys, or null
+  selectedBehaviour: null, // one of the 11 behaviour keys, or null
+  playerPromptCount: 0,    // counts only handlePlayerInput calls; resets after compression
+  lastSummary: ''          // most recent story summary from context compression
 };
 
 // ── DOM References ──────────────────────────────────────────────
@@ -129,6 +131,14 @@ function appendMessage(type, text, extra = {}) {
     div.innerHTML = `<div class="msg-label">You</div><div class="msg-text">${escapeHtml(text)}</div>`;
   } else if (type === 'system') {
     div.innerHTML = `<div class="msg-text">${escapeHtml(text)}</div>`;
+  } else if (type === 'summary') {
+    div.innerHTML = `
+      <div class="msg-summary-header">
+        <span class="msg-summary-icon">📜</span>
+        <span class="msg-summary-label">Chronicle of Events Thus Far</span>
+      </div>
+      <div class="msg-text">${escapeHtml(text)}</div>
+    `;
   } else if (type === 'roll') {
     const success = extra.success;
     const cls = success ? 'success' : 'failure';
@@ -504,6 +514,54 @@ function generateFallbackCharacter(gender) {
   };
 }
 
+// ── Context Compression ──────────────────────────────────────────
+
+async function compressContext() {
+  // Snapshot full history BEFORE any mutation — safe on failure
+  const fullHistory = [...state.conversationHistory];
+
+  try {
+    const summary = await DM.summarize(state.apiKey, fullHistory);
+    state.lastSummary = summary;
+
+    // Build character block for the seed message
+    const c = state.character;
+    const charBlock = c ? [
+      `Name: ${c.name}`,
+      `Race/Class: ${c.race} ${c.class} (Level ${c.level})`,
+      `Background: ${c.background}`,
+      `Gender: ${c.gender}`,
+      `HP: ${c.current_hp} / ${c.max_hp}`,
+      `AC: ${c.ac}`,
+      `STR: ${c.stats.str} | DEX: ${c.stats.dex} | CON: ${c.stats.con}`,
+      `INT: ${c.stats.int} | WIS: ${c.stats.wis} | CHA: ${c.stats.cha}`,
+      `Proficiency Bonus: +${c.proficiency_bonus}`
+    ].join('\n') : 'No character data.';
+
+    const seedUserMessage =
+      `[CONTEXT SUMMARY — story log compressed for continuity]\n\n` +
+      `CAMPAIGN: ${state.campaign}\n` +
+      `DEATHS SO FAR: ${state.deathCount}\n\n` +
+      `CURRENT CHARACTER:\n${charBlock}\n\n` +
+      `STORY SUMMARY:\n${summary}\n\n` +
+      `Please acknowledge this context and continue the story from the last situation described.`;
+
+    // Single user entry — DM's response becomes the first assistant entry naturally,
+    // keeping user/assistant alternation correct for all subsequent turns.
+    state.conversationHistory = [{ role: 'user', content: seedUserMessage }];
+
+    state.playerPromptCount = 0;
+    appendMessage('summary', summary);
+
+  } catch (err) {
+    // History NOT mutated on failure — original full history is preserved
+    console.warn('Context compression failed:', err.message);
+    appendMessage('system', `⚠ Memory compression skipped — ${err.message}`);
+    // Reset counter so we retry after 15 more prompts, not on every action
+    state.playerPromptCount = 0;
+  }
+}
+
 // ── Input Handling ───────────────────────────────────────────────
 
 async function handlePlayerInput() {
@@ -531,7 +589,16 @@ async function handlePlayerInput() {
   // Clear behaviour selection after sending
   clearBehaviour();
 
+  // Increment player prompt counter (roll results and system events don't count)
+  state.playerPromptCount++;
+
   state.conversationHistory.push({ role: 'user', content: dmContent });
+
+  // Every 15 player prompts: compress context via a separate summarization call
+  if (state.playerPromptCount >= 15) {
+    await compressContext();
+  }
+
   await fetchDMResponse();
 }
 
@@ -539,9 +606,9 @@ async function handlePlayerInput() {
 
 async function startGame() {
   const key = el.apiKeyInput.value.trim();
-  if (!key || !key.startsWith('sk-')) {
+  if (!key || (!key.startsWith('xai-') && !key.startsWith('sk-'))) {
     el.apiKeyInput.style.borderColor = 'var(--red)';
-    el.apiKeyInput.placeholder = 'Please enter a valid API key (starts with sk-)';
+    el.apiKeyInput.placeholder = 'Please enter a valid Grok API key (starts with xai-)';
     return;
   }
 
@@ -576,6 +643,8 @@ function clearBehaviour() {
 function restartGame() {
   state.apiKey = state.apiKey; // keep key
   state.phase = 'setup';
+  state.playerPromptCount = 0;
+  state.lastSummary = '';
   clearBehaviour();
   state.conversationHistory = [];
   state.character = null;
